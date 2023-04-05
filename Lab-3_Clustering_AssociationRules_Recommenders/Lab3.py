@@ -22,7 +22,7 @@
 
 # 
 
-# In[1]:
+# In[2]:
 
 
 # Import libraries
@@ -65,7 +65,7 @@ warnings.filterwarnings(action='once')
 pd.set_option('display.max_columns', None)
 
 
-# In[2]:
+# In[3]:
 
 
 # Dataset
@@ -73,7 +73,7 @@ url = 'https://github.com/cdholmes11/MSDS-7331-ML1-Labs/blob/main/Mini-Lab_Logis
 hotel_df = pd.read_csv(url, encoding = "utf-8")
 
 
-# In[3]:
+# In[4]:
 
 
 # Dropping index column arrival_year
@@ -98,7 +98,7 @@ cat_features_final = list(hotel_df_final[cat_features].columns)
 cont_features_final = list(hotel_df_final[cont_features].columns)
 
 
-# In[4]:
+# In[5]:
 
 
 # Pipeline - Classification
@@ -121,7 +121,7 @@ preprocessor = ColumnTransformer(
 )
 
 
-# In[5]:
+# In[6]:
 
 
 kmeans_pipe = Pipeline([
@@ -137,7 +137,7 @@ cluster_labels = kmeans_pipe.predict(hotel_df_trim)
 hotel_df_trim['cluster_labels'] = cluster_labels
 
 
-# In[6]:
+# In[7]:
 
 
 fig = px.scatter(
@@ -150,55 +150,15 @@ fig = px.scatter(
 fig.show()
 
 
-# In[7]:
+# # Exceptional Work
 
-
-print(hotel_df)
-
+# In the case of our Hotel Reservations dataset, we are interested in segmenting customers based on their booking behavior, this lead us to cluster based on lead time (the time between booking and arrival). We wanted to see if certain types of customers book well in advanced vs last minute. 
+# 
+# Since examining only customers who booked a hotel room we will remove cancelled bookings since they don't represent completed bookings. We'll standarize the data using 'StandardScaler()' so that the lead time values are on the same scale as the booking status values and are easily plottable. 
+# 
+# For evaluating the model we initially decided to use a visual method and decided on plotting an elbow chart to determine the optimal number of clusters. Fitting K-Means clustering models with different numbers of clusters and plot the within-cluster sum of squares (WCSS) for each model. We choose the number of clusters where the decrease in WCSS begins to level off, which in this case appears to be 3.
 
 # In[9]:
-
-
-import pandas as pd
-from sklearn.cluster import KMeans
-import matplotlib.pyplot as plt
-
-# Load the dataset
-url = 'https://github.com/cdholmes11/MSDS-7331-ML1-Labs/blob/main/Mini-Lab_LogisticRegression_SVMs/Hotel%20Reservations.csv?raw=true'
-dfrd = pd.read_csv(url)
-
-# Extract the "length_of_stay" variable
-X = dfrd[["no_of_week_nights"]]
-
-# Standardize the variable
-from sklearn.preprocessing import StandardScaler
-scaler = StandardScaler()
-X = scaler.fit_transform(X)
-
-# Determine the optimal number of clusters using the elbow method
-inertia = []
-for k in range(1, 11):
-    kmeans = KMeans(n_clusters=k, random_state=0)
-    kmeans.fit(X)
-    inertia.append(kmeans.inertia_)
-plt.plot(range(1, 11), inertia)
-plt.title("Elbow Plot")
-plt.xlabel("Number of Clusters")
-plt.ylabel("Inertia")
-plt.show()
-
-# Perform K-Means clustering with K=3
-kmeans = KMeans(n_clusters=3, random_state=0)
-kmeans.fit(X)
-
-# Add the cluster labels to the original dataframe
-dfrd["cluster"] = kmeans.labels_
-
-# Display the cluster means
-print(dfrd.groupby("cluster")["no_of_week_nights"].mean())
-
-
-# In[11]:
 
 
 import matplotlib.pyplot as plt
@@ -206,12 +166,9 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
 import pandas as pd
 
-# Load data
-url = 'https://github.com/cdholmes11/MSDS-7331-ML1-Labs/blob/main/Mini-Lab_LogisticRegression_SVMs/Hotel%20Reservations.csv?raw=true'
-df = pd.read_csv(url)
 
 # Preprocessing
-df = df[df['booking_status'] == 'Not_Canceled']  # only keep non-canceled bookings
+df = hotel_df_final[hotel_df_final['booking_status'] == 'Not_Canceled']  # only keep non-canceled bookings
 X = df[['lead_time']].values  # cluster on lead time
 
 # Elbow method
@@ -253,20 +210,15 @@ db_score = davies_bouldin_score(X, y_pred)
 print("Davies-Bouldin Index is:", db_score)
 
 
-# In[12]:
+# Examming the fit of the K-Means clustering model with 3 clusters and visualizing the clusters by plotting the lead time values against the booking status values, the resulting plot shows that there are three distinct groups of customers based on their lead time and booking status. Since we have only 3 clusters, the Silhouette score may not be very informative. If we had more clusters, the Silhouette score could be more useful for evaluating the quality of the clustering results.
 
+# ### Optimizing the model
 
-import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score, calinski_harabasz_score, davies_bouldin_score
-import pandas as pd
+# In[10]:
 
-# Load data
-url = 'https://github.com/cdholmes11/MSDS-7331-ML1-Labs/blob/main/Mini-Lab_LogisticRegression_SVMs/Hotel%20Reservations.csv?raw=true'
-df = pd.read_csv(url)
 
 # Preprocessing
-df = df[df['booking_status'] == 'Not_Canceled']  # only keep non-canceled bookings
+df = hotel_df_final[hotel_df_final['booking_status'] == 'Not_Canceled']  # only keep non-canceled bookings
 X = df[['lead_time']].values  # cluster on lead time
 
 # Optimize number of clusters
@@ -313,15 +265,22 @@ db_score = davies_bouldin_score(X, y_pred)
 print("Davies-Bouldin Index is:", db_score)
 
 
-# For the silhouette score, a higher score (closer to 1) indicates better-defined clusters and a better overall clustering performance.
+# Optimizing the number of clusters by computing the silhouette score for the different numbers of clusters (2-10 in the above case) and choosing the number of clusters that gives the highest score. We are able to fit the KMeans model with the optimized number of clusters and visualize the clustering results. 
 # 
-# For the CH score, a higher score indicates that the clusters are more compact and well-separated, indicating a better clustering performance.
+# We can observe and provide inferences based on the below clusters:
 # 
-# The DBI score ranges from 0 to infinity, with lower values indicating better clustering. A score of 0 indicates perfect clustering, where each cluster is well-separated and compact, while higher scores indicate that the clusters are overlapping or poorly separated.
+# Cluster 1: This cluster represents bookings with the shortest lead time. These bookings were likely made last-minute, perhaps due to a sudden change in plans or a desire to take advantage of a last-minute deal. These customers may be price-sensitive and willing to take a risk on availability.
 # 
-# Like the other evaluation metrics, a lower DBI score indicates better clustering. Therefore, a good clustering model should have a low DBI score, indicating that the clusters are well-separated and distinct.
+# Cluster 2: This cluster represents bookings with a relatively short lead time, but not as short as Cluster 1. These customers may be slightly more planned, but still looking for a deal or to take advantage of a special offer.
 # 
-# It's important to note that no single metric can fully capture the quality of clustering, so it's always a good idea to use multiple evaluation metrics to get a more comprehensive view of the clustering performance.
+# Cluster 3: This cluster represents bookings with a moderate lead time. These customers are likely more planned and have a specific trip or event in mind. They may be willing to pay a bit more for convenience or amenities.
+# 
+# Cluster 4: This cluster represents bookings with a longer lead time. These customers are likely very planned and have a specific destination and/or dates in mind. They may be willing to pay a premium for a desirable location or property.
+# 
+# Cluster 5: This cluster represents bookings with the longest lead time. These customers are likely the most planned and have a specific destination and/or dates in mind well in advance. They may be looking for luxury accommodations or unique experiences and are likely less price-sensitive than customers in other clusters.
+# 
+# 
+# Based on the metrics used to evaluate the clustering models, they appear to be equal. The optimized model has a slight edge in comparsion even with a lower silhouette score (0.61 compared to 0.64) and a slightly better Davies-Bouldin Index (.49 compared to .50), indicating slightly better separation between the clusters and lower overlap between them. This becomes more apprent upon examining the Calinski-Harabasz Index (87355.41 compared to original model score of 67207.82). The customer segmentation is better represented as the clusters are more compact and well separated in the optimized model vs the original model. 
 
 # In[ ]:
 
